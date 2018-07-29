@@ -9,3 +9,10 @@ services:
       - ENV=development
       - BOT_TOKEN=${BOT_TOKEN}
     command: python -u bot.py
+
+  mongo:
+    image: mongo:3
+    volumes:
+      - ./datadir:/data/db
+    ports:
+      - "27017:27017"

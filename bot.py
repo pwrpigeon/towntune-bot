@@ -7,6 +7,7 @@ import time
 import discord
 from discord.ext import commands
 import pytz
+from pymongo import MongoClient
 
 if not discord.opus.is_loaded():
     discord.opus.load_opus('./libopus.so')
@@ -99,6 +100,7 @@ def get_12_hour_string(hour_24_hours):
 
 class VoiceState:
     """The state of the bot's presence in a server."""
+
     def __init__(self, bot):
         """
         :param bot: the bot the state belongs to
@@ -138,6 +140,7 @@ class TownTuneBot:
     """A bot to play the right ACNL song for the current hour in your server's region. Contains commands to start and
     stop the bot and periodically checks each active VoiceClient to see if its song needs to be changed or restarted.
     """
+
     def __init__(self, bot):
         """
         :param bot: the bot the state belongs to
@@ -150,6 +153,10 @@ class TownTuneBot:
         self.stopFlag = Event()
         self.update_thread = BotThread(self.stopFlag, self)
         self.update_thread.start()
+
+        client = MongoClient('mongodb://mongo:27017')
+        db = client.towntune
+        self.bell_ledger = db.bell_ledger
 
     def get_voice_state(self, server):
         """
@@ -234,7 +241,7 @@ class TownTuneBot:
                         logging.info('Continuing song on server %s - %s', state.server.id, state.server.name)
 
     @commands.command(pass_context=True, no_pm=True)
-    async def settesthour(self, ctx, *, hour: int=None):
+    async def settesthour(self, ctx, *, hour: int = None):
         if os.environ['ENV'] == 'development':
             self.test_hour = hour
             logging.info('Test hour is now {}'.format(self.test_hour))
@@ -302,7 +309,7 @@ class TownTuneBot:
             logging.error('An error occurred in %s - %s\n%s', ctx.message.server.name, ctx.message.server.id, e)
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
-            
+
     @commands.command(pass_context=True, no_pm=True)
     async def bells(self, ctx):
         """
@@ -312,20 +319,25 @@ class TownTuneBot:
         :type ctx: discord.ext.commands.Context
         :return:
         """
-        if str(ctx.message.author) in lodger:
-            await self.bot.say('You currently have ' + str(lodger[str(ctx.message.author)]) + ' bells in your account.')
-        else:
-            lodger[str(ctx.message.author)] = 0
+        try:
+            account = self.bell_ledger.find_one({'_id': str(ctx.message.author.id)})
+            await self.bot.say('You currently have ' + str(account['balance']) + ' bells in your account.')
+        except TypeError as e:
+            self.bell_ledger.insert_one({'_id': str(ctx.message.author.id), 'balance': 0})
             await self.bot.say('We\'ve set up a new account for you!')
+
 
 bot = commands.Bot(command_prefix=commands.when_mentioned, description="Welcome to Animal Crossing!")
 town_tune_bot = TownTuneBot(bot)
 bot.add_cog(town_tune_bot)
-lodger = { }
+
+lodger = {}
+
 
 @bot.event
 async def on_ready():
     """Called when the bot successfully logs in."""
     logging.info('Logged in as:%s (ID: %s)', bot.user, bot.user.id)
+
 
 bot.run(os.environ['BOT_TOKEN'])

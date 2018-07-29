@@ -10,6 +10,7 @@ COPY . .
 RUN pip3 install discord.py[voice]
 RUN pip3 install asyncio
 RUN pip3 install pytz
+RUN pip3 install pymongo
 
 RUN apk del .deps
 

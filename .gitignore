@@ -6,3 +6,6 @@ venv
 audio/*
 !audio/.gitkeep
 docker-compose.deploy.yml
+
+datadir/*
+!datadir/.gitkeep
