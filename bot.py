@@ -253,7 +253,7 @@ class TownTuneBot:
         """
         summoned_channel = ctx.message.author.voice_channel
         if summoned_channel is None:
-            await self.bot.say('You must be in a voice channel to use ~towntune')
+            await self.bot.say('You must be in a voice channel to use TownTune!')
             return False
 
         state = self.get_voice_state(ctx.message.server)
@@ -268,6 +268,7 @@ class TownTuneBot:
         try:
             player = state.voice_client.create_ffmpeg_player(filename='audio/{}.mp3'.format(current_server_hour))
             player.start()
+            await self.bot.say('Now joining %s!' % summoned_channel)
 
             state.player = player
             state.last_checked_hour = current_server_hour
@@ -285,6 +286,7 @@ class TownTuneBot:
         :type ctx: discord.ext.commands.Context
         :return:
         """
+        summoned_channel = ctx.message.author.voice_channel
         server = ctx.message.server
         state = self.get_voice_state(server)
 
@@ -295,16 +297,31 @@ class TownTuneBot:
         try:
             await state.voice_client.disconnect()
             del self.voice_states[server.id]
+            await self.bot.say('Disconnecting from %s! Have a nice day!' % summoned_channel)
         except Exception as e:
             logging.error('An error occurred in %s - %s\n%s', ctx.message.server.name, ctx.message.server.id, e)
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
-
+            
+    @commands.command(pass_context=True, no_pm=True)
+    async def bells(self, ctx):
+        """
+        Experimental: Stores/recalls bell balances for users.
+        
+        :param ctx: command context
+        :type ctx: discord.ext.commands.Context
+        :return:
+        """
+        if str(ctx.message.author) in lodger:
+            await self.bot.say('You currently have ' + str(lodger[str(ctx.message.author)]) + ' bells in your account.')
+        else:
+            lodger[str(ctx.message.author)] = 0
+            await self.bot.say('We\'ve set up a new account for you!')
 
 bot = commands.Bot(command_prefix=commands.when_mentioned, description="Welcome to Animal Crossing!")
 town_tune_bot = TownTuneBot(bot)
 bot.add_cog(town_tune_bot)
-
+lodger = { }
 
 @bot.event
 async def on_ready():
