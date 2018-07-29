@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  bot:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - ENV=development
+      - BOT_TOKEN=${BOT_TOKEN}
+    command: python -u bot.py

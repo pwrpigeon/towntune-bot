@@ -1,0 +1,20 @@
+@startuml
+Actor ServerMember
+Participant Server
+Participant Bot
+Participant VoiceBot
+
+ServerMember -> Server: Issue "~towntune" command
+Server -> Bot: Command
+Bot -> Bot: Look for server in list of voice clients
+
+alt No voice client found for server:
+    Bot -> Bot: Create VoiceClient for server
+    Bot -> Bot: Add VoiceClient to dict
+    Bot -> Bot: Add started hour to dict
+    Bot -> Bot: Create player for VoiceClient for current hour
+    Bot -> Bot: Start player
+else
+    Bot -> Bot: Say "Already playing in this server!"
+end
+@enduml

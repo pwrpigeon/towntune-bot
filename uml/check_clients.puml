@@ -1,0 +1,22 @@
+@startuml
+Participant Bot
+
+loop every 30 seconds
+    loop For each VoiceClient in client dict
+        Bot -> Bot: Get region for client's server
+        Bot -> Bot: Get started hour for client
+        Bot -> Bot: Get current hour for client's server
+
+        alt Started hour != Current hour
+            Bot -> Bot: Stop VoiceClient
+            Bot -> Bot: Create player for VoiceClient for current hour
+            Bot -> Bot: Start player
+        else
+            alt VoiceClient player is done playing
+                Bot -> Bot: Create player for VoiceClient for current hour
+                Bot -> Bot: Start player
+            end
+        end
+    end
+end
+@enduml
